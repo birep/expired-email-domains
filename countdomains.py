@@ -16,8 +16,10 @@ import glob
 
 c = Counter()
 
-breachdatapath = "/home/taylor/breachdata/"
-outfn = "/home/taylor/breachdata/domain_counts_all.json"
+# Set these to the appropriate values for your system:
+
+breachdatapath = "/path/to/breachdata/"
+outfn = "/path/to/domain_counts_all.json"
 infns = glob.glob(f"{breachdatapath}//**/*")
 
 pattern = r"(?i)@([a-z0-9\-\.\_]+\.(?:com|org|net))(?::|;)"
