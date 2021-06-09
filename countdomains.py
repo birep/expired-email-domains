@@ -13,35 +13,40 @@ import re
 from collections import Counter
 import json
 import glob
+import tldextract
+import sys
+import os
+from multiprocessing import Pool
+
+if len(sys.argv) != 3:
+    print("USAGE: ./countdomains.py [path to breach data] [path to generated counts file]")
+    exit()
 
 c = Counter()
 
-# Set these to the appropriate values for your system:
+infns = []
 
-breachdatapath = "/path/to/breachdata/"
-outfn = "/path/to/domain_counts_all.json"
-infns = glob.glob(f"{breachdatapath}//**/*")
+for root, unused_dirs, files in os.walk(sys.argv[1]):
+   for name in files:
+      infns.append(os.path.join(root, name))
 
 pattern = r"(?i)@([a-z0-9\-\.\_]+\.(?:com|org|net))(?::|;)"
 valid = re.compile(pattern)
 
-for infn in infns:
-    print(f"file: {infn}")
-    try:
-        with open(infn,'r') as creds:
-            for cred in creds:
-                result = valid.search(cred)
-                if result:
-                    c[result.groups()[0].lower()] += 1
-    except KeyboardInterrupt:
-        # This will run for a while, so let's allow ourselves to escape with ctrl-c
-        break
-    except Exception as e:
-        # Many breach data text files will have non-utf-8 characters and null bytes
-        # that will cause errors. To avoid the errors you can use iconv to convert your
-        # files to utf-8 before scanning.
-        print(f"error in file: {infn}")
-        print(e)
+def stripsubdomains(domain):
+    unused_sub,dom,suf = tldextract.extract(domain)
+    return f"{dom}.{suf}"
 
-with open(outfn, 'w') as outfile:
-    outfile.write(json.dumps(sorted(c.items(), key=lambda x: x[1], reverse=True)))
+def countdomains(infn):
+    print(f"file: {infn}")
+    with open(infn,'r') as creds:
+        for cred in creds:
+            result = valid.search(cred)
+            if result:
+                c[stripsubdomains(result.groups()[0].lower())] += 1
+
+if __name__ == '__main__':
+    with Pool() as pool:
+        pool.map(countdomains, infns)
+    with open(sys.argv[2], 'w') as outfile:
+        outfile.write(json.dumps(sorted(c.items(), key=lambda x: x[1], reverse=True)))
