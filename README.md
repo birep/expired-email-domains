@@ -1,4 +1,4 @@
-# Finding Available Domain in Breach Data
+# Finding Available Domains in Breach Data
 
 This is the project code from a <a href="https://birep.net/blog1.html">series of blog posts</a> on finding expired email domains using breach data and the Namecheap API.
 
