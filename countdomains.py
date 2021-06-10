@@ -8,11 +8,9 @@
 
 # for more info see blog post: https://birep.net/blog1.html
 
-
 import re
 from collections import Counter
 import json
-import glob
 import tldextract
 import sys
 import os
@@ -21,8 +19,6 @@ from multiprocessing import Pool
 if len(sys.argv) != 3:
     print("USAGE: ./countdomains.py [path to breach data] [path to generated counts file]")
     exit()
-
-c = Counter()
 
 infns = []
 
@@ -39,14 +35,19 @@ def stripsubdomains(domain):
 
 def countdomains(infn):
     print(f"file: {infn}")
+    c = Counter()
     with open(infn,'r') as creds:
         for cred in creds:
             result = valid.search(cred)
             if result:
-                c[stripsubdomains(result.groups()[0].lower())] += 1
+                domain = stripsubdomains(result.groups()[0].lower())
+                c[domain] += 1
+    return c
 
 if __name__ == '__main__':
+    domaincounts = Counter()
     with Pool() as pool:
-        pool.map(countdomains, infns)
+        for result in pool.imap_unordered(countdomains, infns):
+            domaincounts = domaincounts + result
     with open(sys.argv[2], 'w') as outfile:
-        outfile.write(json.dumps(sorted(c.items(), key=lambda x: x[1], reverse=True)))
+        outfile.write(json.dumps(sorted(domaincounts.items(), key=lambda x: x[1], reverse=True)))
